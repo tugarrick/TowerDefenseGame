@@ -347,7 +347,7 @@ while run:
         
         
         #Hanlde can_place variable
-        if mouse_pos[0] > 0 and mouse_pos[0] < c.SCREEN_WIDTH and mouse_pos[1] > 0 and mouse_pos[1] < c.SCREEN_HEIGHT:
+        if 0 < mouse_pos[0] < c.SCREEN_WIDTH and 0 < mouse_pos[1] < c.SCREEN_HEIGHT:
             if(world.tile_map[mouse_tile_num] == 25):
                 free_space = True
                 for turret in turret_group:
@@ -448,24 +448,23 @@ while run:
             run = False
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             print(mouse_pos)
-            if mouse_pos[0] > 0 and mouse_pos[0] < c.SCREEN_WIDTH and mouse_pos[1] > 0 and mouse_pos[1] < c.SCREEN_HEIGHT:
-                if (selected_turret):
-                    if current_info_panel_rect.collidepoint(mouse_pos) == False:
+            if 0 < mouse_pos[0] < c.SCREEN_WIDTH and 0 < mouse_pos[1] < c.SCREEN_HEIGHT:
+                turret = select_turret() # turret = None if can't select 
+                if selected_turret:
+                    if not current_info_panel_rect.collidepoint(mouse_pos):
                         selected_turret = None
                         clear_selection()
-                        current_info_panel_rect = pygame.Rect(0,0,0,0)
-                        if select_turret():
-                            selected_turret = select_turret()
+                        current_info_panel_rect = pygame.Rect(0, 0, 0, 0)
+                        if turret:
+                            selected_turret = turret
                             selected_turret.selected = True
-                else:
-                    if placing_turrets == True:
-                        if can_place == True:           
-                            create_turret()
-                    else:
-                        if select_turret():
-                            selected_turret = select_turret()
-                            selected_turret.selected = True
-                            
+                elif placing_turrets:
+                    if can_place:
+                        create_turret()
+                elif turret:
+                    selected_turret = turret
+                    selected_turret.selected = True
+
     pygame.display.update()
 
 pygame.quit()
