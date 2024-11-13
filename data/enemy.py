@@ -4,6 +4,7 @@ import math
 from pygame.math import Vector2
 from data.enemy_data import ENEMY_DATA
 
+
 path = 'data/assets/images/enemies/'
 
 class Enemy(pygame.sprite.Sprite):
@@ -14,10 +15,10 @@ class Enemy(pygame.sprite.Sprite):
         self.level = self.world.enemy_list[self.world.spawned_enemy]
         
         self.pos = Vector2(self.waypoints[0])
-        self.original_image = pygame.image.load(path + 'level_' + self.level + '.png').convert_alpha()
+        self.original_image = pygame.image.load(path + 'map_' + str(self.world.map_number) + '_level_' + self.level + '.png').convert_alpha()
         self.target_waypoint = 1
-        self.health = ENEMY_DATA[self.level].get('health')
-        self.speed = ENEMY_DATA[self.level].get('speed')
+        self.health = ENEMY_DATA['map_' + str(self.world.map_number)][self.level].get('health')
+        self.speed = ENEMY_DATA['map_' + str(self.world.map_number)][self.level].get('speed')
         self.reward = self.health
         self.movement = (0,0)
         self.angle = 0
@@ -27,9 +28,9 @@ class Enemy(pygame.sprite.Sprite):
 
     def update(self):
 
-        if self.health <= ENEMY_DATA[str(max(1, int(self.level) - 1))].get('health'):
+        if self.health <= ENEMY_DATA['map_' + str(self.world.map_number)][str(max(1, int(self.level) - 1))].get('health'):
             self.level = str(max(1, int(self.level) - 1))
-            self.original_image = pygame.image.load(path + 'level_' + self.level + '.png').convert_alpha()
+            self.original_image = pygame.image.load(path + 'map_' + str(self.world.map_number) + '_level_' + self.level + '.png').convert_alpha()
 
         self.rotate()
         self.move()

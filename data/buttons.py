@@ -21,6 +21,7 @@ class Button:
             self.clicked = False
         
         suf.blit(self.image, self.rect)
+        
         return action
     # def set_alpha(self, alpha):
     #     self.image.set_alpha(alpha)

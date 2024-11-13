@@ -1,12 +1,16 @@
 import pygame
 import random
+import json
 
+import data.constants as c
 from data.enemy_data import ENEMY_SPAWN_DATA
 
 class World:
-    def __init__(self, map_data, map_image):
-        self.level_data = map_data
-        self.image = map_image
+    def __init__(self, map_number):
+        self.map_number = map_number
+        self.map_data = json.load(open('data/levels/map_' + str(map_number) + '.tmj'))
+        self.image = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(map_number) +'.png'), (c.SCREEN_WIDTH, c.SCREEN_HEIGHT))
+        
         self.waypoints = []
         self.tile_map = []
         self.enemy_list = []
@@ -14,12 +18,14 @@ class World:
         self.round_reward = 0
         self.game_speed = 1
         self.round = 1
-        self.round_nums = len(ENEMY_SPAWN_DATA)
+        self.round_nums = len(ENEMY_SPAWN_DATA["map_" + str(self.map_number)])
         self.health = 100
         self.money = 800
+        self.process_data()
+        self.process_enemies()
 
     def process_data(self):
-        for layer in self.level_data['layers']:
+        for layer in self.map_data['layers']:
             if layer['name'] == 'Ground':
                 self.tile_map = layer['data']
 
@@ -31,7 +37,7 @@ class World:
     
     def process_enemies(self):
         self.enemy_list.clear()
-        enemies = ENEMY_SPAWN_DATA[self.round - 1]
+        enemies = ENEMY_SPAWN_DATA["map_" + str(self.map_number)][self.round - 1]
         self.spawn_cooldown = enemies['delay']
         self.round_reward = enemies['reward']
         for enemy_rank in enemies:

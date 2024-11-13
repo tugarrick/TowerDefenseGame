@@ -8,8 +8,6 @@ os.environ['SDL_VIDEO_CENTERED'] = '1' # Set the environment variable to center 
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-
-
 import data.constants as c
 from data.enemy import Enemy
 from data.world import World
@@ -26,20 +24,15 @@ full_screen = False
 
 pygame.display.set_caption('Tower Defense Game')
 
-
-
 #Load map data
-with open('data/levels/map_1.tmj') as file:
-    map_data = json.load(file)
 
-map_image = pygame.image.load('data/levels/map_1.png').convert_alpha()
-world = World(map_data, map_image)
-world.process_data()
-world.process_enemies()
+# map_1_image = pygame.transform.scale(pygame.image.load('data/levels/map_1.png'),(550,300)) 
+# map_2_image = pygame.transform.scale(pygame.image.load('data/levels/testmap.png'),(550,300)) 
+
+world = World(1)
 
 #enemy
 enemy_group = pygame.sprite.Group()
-
 
 #turret
 turret_name = 'camo'
@@ -64,8 +57,10 @@ mouse_tile_y = mouse_pos[1] // c.TILE_SIZE
 can_place = True
 
 #variables
+current_map_number = 1
 game_over = False
 game_result = 0 # -1 is loss & 1 is win
+game_state = 'menu'
 last_enemy_spawn = pygame.time.get_ticks()
 placing_turrets = False
 selected_turret = None
@@ -83,7 +78,7 @@ slot_rows = 4
 dark_overlay = pygame.Surface((slot_width, slot_height), pygame.SRCALPHA)
 dark_overlay.fill((0, 0, 0, 0))  # Đen với alpha 100
 
-
+menu_bg = pygame.transform.scale(pygame.image.load("data/assets/images/backgrounds/menu_bg.png"), (c.SCREEN_WIDTH + c.SIDE_PANEL, c.SCREEN_HEIGHT))
 slot_bg = pygame.image.load('data/assets/images/backgrounds/SlotImage.png')
 preview_bg = pygame.image.load('data/assets/images/backgrounds/preview_turret.png')
 arrow_right_img = pygame.image.load('data/assets/images/gui/arrow_right.png').convert_alpha()
@@ -97,6 +92,14 @@ for y in range(15, (10 + slot_space + slot_height)*(slot_rows - 1) + 1, slot_hei
 
       
 #button
+new_game_image = pygame.image.load('data/assets/images/buttons/new_game.png').convert_alpha()
+choose_level_image = pygame.image.load('data/assets/images/buttons/choose_level.png').convert_alpha()
+options_image = pygame.image.load('data/assets/images/buttons/options.png').convert_alpha()
+exit_game_image = pygame.image.load('data/assets/images/buttons/exit.png').convert_alpha()
+arrow_navigation_right_img = pygame.image.load('data/assets/images/buttons/arrow_right.png').convert_alpha()
+arrow_navigation_left_img = pygame.image.load('data/assets/images/buttons/arrow_left.png').convert_alpha()
+arrow_navigation_right_img = pygame.transform.scale(arrow_navigation_right_img, (100,76))
+arrow_navigation_left_img = pygame.transform.scale(arrow_navigation_left_img, (100,76))
 buy_turret_image = pygame.image.load('data/assets/images/buttons/buy_turret.png').convert_alpha()
 cancel_image = pygame.image.load('data/assets/images/buttons/cancel.png').convert_alpha()
 upgrade_image = pygame.image.load('data/assets/images/buttons/upgrade_turret.png').convert_alpha()
@@ -105,6 +108,11 @@ restart_image = pygame.image.load('data/assets/images/buttons/restart.png').conv
 fast_forward_image = pygame.image.load('data/assets/images/buttons/fast_forward.png').convert_alpha()
 sell_image = pygame.image.load('data/assets/images/buttons/sell.png').convert_alpha()
 green_button_img = pygame.transform.scale(pygame.image.load('data/assets/images/buttons/green_button.png').convert_alpha(), (200, 90))
+sample_button_img = pygame.image.load('data/assets/images/buttons/sample.png').convert_alpha()
+map_img = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(current_map_number) + '.png'),(550,300))
+exit_icon_img = pygame.image.load('data/assets/images/buttons/exit_icon.png').convert_alpha()
+setting_icon_img = pygame.transform.scale(pygame.image.load('data/assets/images/buttons/setting.png').convert_alpha(), (85, 80))
+
 #GUI
 heart_image = pygame.image.load("data/assets/images/gui/heart.png").convert_alpha()
 coin_image = pygame.image.load("data/assets/images/gui/coin.png").convert_alpha()
@@ -112,24 +120,49 @@ damage_img = pygame.transform.scale(pygame.image.load("data/assets/images/gui/da
 range_img = pygame.transform.scale(pygame.image.load("data/assets/images/gui/range_icon.png").convert_alpha(), (36,36))
 speed_img = pygame.transform.scale(pygame.image.load("data/assets/images/gui/speed_icon.png").convert_alpha(), (44,44))
 
-
+#create button
+new_game_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - new_game_image.get_width() / 2, 330, new_game_image, True)
+choose_level_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - choose_level_image.get_width() / 2, 430, choose_level_image, True)
+options_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - options_image.get_width() / 2, 530, options_image, True)
+exit_game_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - exit_game_image.get_width() / 2, 630, exit_game_image, True)
+arrow_navigation_left_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400, 300, arrow_navigation_left_img, True)
+arrow_navigation_right_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2  + 300 , 300, arrow_navigation_right_img, True)
 buy_turret_button = Button(c.SCREEN_WIDTH + 30, 120, buy_turret_image, True)
 cancel_button = Button(c.SCREEN_WIDTH + 40, c.SCREEN_HEIGHT - 120, cancel_image, True)
 upgrade_button = Button(c.SCREEN_WIDTH - 250, c.SCREEN_HEIGHT - 290, green_button_img, True)
 begin_button = Button(c.SCREEN_WIDTH + 12, c.SCREEN_HEIGHT - 60, begin_image, True)
-restart_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 89, c.SCREEN_HEIGHT / 2, restart_image, True)
-fast_forward_button = Button(c.SCREEN_WIDTH + 5, c.SCREEN_HEIGHT - 60, fast_forward_image, False)
+fast_forward_button = Button(c.SCREEN_WIDTH + 5, c.SCREEN_HEIGHT - 60, fast_forward_image, True)
 sell_button = Button(c.SCREEN_WIDTH - 190, c.SCREEN_HEIGHT - 190, sell_image, True)
-
+play_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 510, sample_button_img, True)
+exit_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 + 365, 105, exit_icon_img, True)
+setting_button = Button(1065, 0, setting_icon_img, True)
+menu_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 485, sample_button_img, True)
+menu_button_2 = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 380, sample_button_img, True)
+continue_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 200, sample_button_img, True)
+restart_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 380, sample_button_img, True)
+restart_button_2 = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 280, sample_button_img, True)
+next_level_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 280, sample_button_img, True)
 
 #text
 text_font = pygame.font.Font("data/fonts/SparkyStonesRegular-BW6ld.ttf", 24)
 medium_font = pygame.font.Font("data/fonts/SparkyStonesRegular-BW6ld.ttf", 30)
 large_font = pygame.font.Font("data/fonts/SparkyStonesRegular-BW6ld.ttf", 36)
+huge_font = pygame.font.Font("data/fonts/SparkyStonesRegular-BW6ld.ttf", 64)
 
 #load sounds
+pygame.mixer.init()
+
+bg_music = pygame.mixer.Sound('data/assets/audio/background_music.mp3')
+bg_music.set_volume(0.3)
+bg_music.play(-1)
+
+game_music = pygame.mixer.Sound('data/assets/audio/game_music.mp3')
+game_music.set_volume(0.2)
+# game_music.play(-1)
+
 sfx_shot = pygame.mixer.Sound('data/assets/audio/shot.wav')
 sfx_shot.set_volume(0.5)
+
 
 
 # Method
@@ -177,7 +210,6 @@ def create_turret():
         turret_group.add(current_turret)
         world.money -= buy_cost
         placing_turrets = False
-
 
 def select_turret():
     for turret in turret_group:
@@ -286,8 +318,8 @@ def display_data():
     
 
     #display data
-    draw_text_with_outline("ROUND", text_font, "grey100", 'black', 1, c.SCREEN_WIDTH - 50, 15, center=True)
-    draw_text_with_outline(str(min(world.round, world.round_nums)) + '/' + str(world.round_nums), large_font, "grey100", 'black', 2, c.SCREEN_WIDTH - 50, 45, center=True)
+    draw_text_with_outline("ROUND", text_font, "grey100", 'black', 1, c.SCREEN_WIDTH - 115, 25, center=True)
+    draw_text_with_outline(str(min(world.round, world.round_nums)) + '/' + str(world.round_nums), large_font, "grey100", 'black', 2, c.SCREEN_WIDTH - 115, 55, center=True)
     screen.blit(heart_image, (0, 15))
     draw_text_with_outline(str(world.health), large_font, "white", 'black', 2, 35, 15)
     screen.blit(coin_image, (150, 15))
@@ -295,159 +327,289 @@ def display_data():
 
     #return
 
+def reset_level():
+    global game_over
+    global round_started
+    global placing_turrets
+    global selected_turret
+    global last_enemy_spawn
+    global world
+
+    #Reset level
+    game_over = False
+    round_started = False
+    placing_turrets = False
+    selected_turret = None
+    last_enemy_spawn = pygame.time.get_ticks()
+    world = World(current_map_number)
+
+    #empty groups
+    enemy_group.empty()
+    turret_group.empty()
+
+# 0 means no menu has been selected
+# 1 is New Game
+# 2 is Choose level
+# 3 is Options
+# 4 is Exit
+choosing_menu_index = 0
+
 clock = pygame.time.Clock()
 run = True
 #GAME LOOP
 while run:
-    # screen.fill('black')
-    world.draw(screen)
     clock.tick(c.FPS)
-
-    if game_over == False:
-        #check if player has lost
-        if world.health <= 0:
-            game_over = True
-            game_result = -1 #loss
-        #check if player has won
-        if world.round > world.round_nums:
-            game_over = True
-            game_result = 1 #win
-
-        #Update
-        enemy_group.update()
-        turret_group.update(enemy_group, world)
-        
-
-    enemy_group.draw(screen)
-
-    for turret in turret_group:
-        turret.draw(screen)
-
-    display_data()
     
-    if game_over == False:
-        
-        
-        if round_started == False:
-            if begin_button.draw(screen):
-                round_started = True  
-        else:
-            world.game_speed = 1
-            if fast_forward_button.draw(screen):
-                world.game_speed = 4
+    if game_state == 'menu':
 
-            #Spawn enemy
-            spawn_enemy()
-                
-        #mouse pos update
-        mouse_pos = pygame.mouse.get_pos()
-        mouse_tile_x = mouse_pos[0] // c.TILE_SIZE
-        mouse_tile_y = mouse_pos[1] // c.TILE_SIZE
-        mouse_tile_num = mouse_tile_y * c.COLS + mouse_tile_x
-        
-        
-        #Hanlde can_place variable
-        if 0 < mouse_pos[0] < c.SCREEN_WIDTH and 0 < mouse_pos[1] < c.SCREEN_HEIGHT:
-            if(world.tile_map[mouse_tile_num] == 25):
-                free_space = True
-                for turret in turret_group:
-                    if (mouse_tile_x, mouse_tile_y) == (turret.tile_x, turret.tile_y):
-                        can_place = False
-                        free_space = False
-                        break
-                if free_space: can_place = True
-            else: can_place = False 
-        else: can_place = False         
+        screen.blit(menu_bg, (0,0))
 
-        if placing_turrets == True:
-            #draw preview turret
-            draw_preview_turret()
-            if cancel_button.draw(screen) == True:
-                placing_turrets = False
+        if (new_game_button.draw(screen) and choosing_menu_index == 0):
+            # choosing_menu_index = 1  
+            current_map_number = 1
+            world = World(current_map_number)
+
+            # switch music
+            bg_music.stop()
+            game_music.play(-1)
+            game_state = 'playing'
+            pygame.time.delay(200) # quick fix overlap button
             
 
-        if selected_turret:
-            #draw turret info panel
-            current_info_panel_rect = pygame.draw.rect(screen, (187, 147, 95), (c.SCREEN_WIDTH - 307, c.SCREEN_HEIGHT - 700, 300, 600), border_bottom_left_radius=15, border_top_left_radius=15)
-            pygame.draw.rect(screen, (139, 94, 55), (c.SCREEN_WIDTH - 307, c.SCREEN_HEIGHT - 700, 300, 600), 4, border_bottom_left_radius=15, border_top_left_radius=15)
+        elif (choose_level_button.draw(screen) and choosing_menu_index == 0) or choosing_menu_index == 2:
+            choosing_menu_index = 2
 
-            draw_text_with_outline(TURRET_TYPE[selected_turret.id]['type'].upper() + ' ' + TURRET_TYPE[selected_turret.id]['name'].upper(), large_font, 'white', 'black', 2, c.SCREEN_WIDTH - 153, c.SCREEN_HEIGHT - 670, center=True)
+            pygame.draw.rect(screen, (187, 147, 95), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 900 / 2, 100, 900, 500), 0, 10)
+            pygame.draw.rect(screen, (139, 94, 55), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 900 / 2, 100, 900, 500), 6, 10)
+            
+            screen.blit(map_img, ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - map_img.get_width() / 2, 170))
+            pygame.draw.rect(screen, (139, 94, 55), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - map_img.get_width() / 2 - 4, 170 - 4, 550 + 8, 300 + 8), 4, 6)
+            draw_text_with_outline('MAP ' + str(current_map_number), large_font, 'white', 'black', 2, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 500, center= True)
 
-            screen.blit(preview_bg, (c.SCREEN_WIDTH - 280, c.SCREEN_HEIGHT - 650))
-            pygame.draw.rect(screen, (139, 94, 55), (c.SCREEN_WIDTH - 280, c.SCREEN_HEIGHT - 650, 250, 150), 4)
-            preview_img = pygame.transform.scale(selected_turret.preview_img, (192, 192))
-            preview_img_rect = preview_img.get_rect()
-            preview_img_rect.center = (c.SCREEN_WIDTH - 280 + 125, c.SCREEN_HEIGHT - 650 + 85)
-            screen.blit(preview_img, preview_img_rect)
-
-            #draw game state
-            screen.blit(damage_img, (c.SCREEN_WIDTH - 295, c.SCREEN_HEIGHT - 472))
-            screen.blit(range_img, (c.SCREEN_WIDTH - 295, c.SCREEN_HEIGHT - 472 + 40))
-            screen.blit(speed_img, (c.SCREEN_WIDTH - 300, c.SCREEN_HEIGHT - 472 + 77))
-
-            draw_text_with_outline(str(selected_turret.damage), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 255, c.SCREEN_HEIGHT - 470)
-            draw_text_with_outline(str(selected_turret.range), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 255, c.SCREEN_HEIGHT - 470 + 40)
-            draw_text_with_outline(str(5 - int(selected_turret.cooldown / 300) + 1), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 255, c.SCREEN_HEIGHT - 470 + 80)
-            draw_text_with_outline('LV.' + str(selected_turret.level) + (' (Max)' if selected_turret.level == 4 else ''), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 270, c.SCREEN_HEIGHT - 470 + 130)
-
-            cost_text_col = 'white'
-            if selected_turret.level < 4:
-                screen.blit(arrow_right_img, (c.SCREEN_WIDTH - 190, c.SCREEN_HEIGHT - 420))
-
-                draw_text_with_outline(str(selected_turret.data[selected_turret.level]['damage']), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 80, c.SCREEN_HEIGHT - 470)
-                draw_text_with_outline(str(selected_turret.data[selected_turret.level]['range']), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 80, c.SCREEN_HEIGHT - 470 + 40)
-                draw_text_with_outline(str(5 - int(selected_turret.data[selected_turret.level]['cooldown'] / 300) + 1), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 80, c.SCREEN_HEIGHT - 470 + 80)
-                draw_text_with_outline('LV.' + str(selected_turret.level + 1), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 80, c.SCREEN_HEIGHT - 470 + 130)
-
-
-                #handle upgrade button
-                if upgrade_button.draw(screen):
-                    if(world.money >= upgrade_cost):
-                        selected_turret.upgrade()
-                        world.money -= upgrade_cost
-
-                if world.money >= upgrade_cost:
-                    cost_text_col = 'white'
-                else: cost_text_col  = 'red'
-
-                draw_text('UPGRADE', medium_font, 'white', c.SCREEN_WIDTH - 208, c.SCREEN_HEIGHT - 275)
-                draw_text_with_outline('$' + str(upgrade_cost), text_font, cost_text_col, 'black', 1,  c.SCREEN_WIDTH - 180, c.SCREEN_HEIGHT - 240)
-                screen.blit(coin_image, (c.SCREEN_WIDTH - 120, c.SCREEN_HEIGHT - 243))
+            if current_map_number > 1 and arrow_navigation_left_button.draw(screen):
+                current_map_number -= 1
+                map_img = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(current_map_number) + '.png'),(550,300))
+            if current_map_number < c.TOTAL_LEVELS and arrow_navigation_right_button.draw(screen):        
+                current_map_number += 1
+                map_img = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(current_map_number) + '.png'),(550,300))
+            
+            if play_button.draw(screen):
+                world = World(current_map_number)
+                # switch music
+                bg_music.stop()
+                game_music.play(-1)
+                game_state = 'playing'
+                pygame.time.delay(200) # quick fix overlap button
                 
-            #Handle sell button
-            draw_text_with_outline('$' + str(sell_cost), text_font, 'white', 'black', 1,  c.SCREEN_WIDTH - 245, c.SCREEN_HEIGHT - 165)
-            screen.blit(coin_image, (c.SCREEN_WIDTH - 280, c.SCREEN_HEIGHT - 168))
-            if sell_button.draw(screen):
-                selected_turret.kill()
-                selected_turret = None
-                world.money += sell_cost
+
+            draw_text_with_outline('PLAY', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 555, center= True)
+
+            if exit_button.draw(screen):
+                choosing_menu_index = 0
+                current_map_number = 1
+        elif (options_button.draw(screen) and choosing_menu_index == 0) or choosing_menu_index == 3:
+            pass
+        elif exit_game_button.draw(screen):
+            run = False
+
+    elif game_state == 'playing':
+
+        #draw map
+        world.draw(screen)  
+
+        if game_over == False:
+            #check if player has lost
+            if world.health <= 0:
+                game_over = True
+                game_result = -1 #loss
+            #check if player has won
+            if world.round > world.round_nums:
+                game_over = True
+                game_result = 1 #win
+
+            #Update
+            enemy_group.update()
+            turret_group.update(enemy_group, world)
+            
+        enemy_group.draw(screen)
+
+        for turret in turret_group:
+            turret.draw(screen)
+
+        display_data()
 
         
-    else:
-        pygame.draw.rect(screen, (164, 166, 159), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 200, c.SCREEN_HEIGHT / 2 - 100, 400, 200), border_radius = 30)
-        if game_result == -1:
-            draw_text("GAME OVER!", large_font, "grey0", (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 90, c.SCREEN_HEIGHT / 2 - 60)
-        elif game_result == 1:
-            draw_text("YOU WIN!", large_font, "grey0", (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 75, c.SCREEN_HEIGHT / 2 - 60)
-        #restart level
+
+        if game_over == False:
+            
+            if setting_button.draw(screen):
+                game_state = 'setting'
+
+            if round_started == False:
+                if begin_button.draw(screen):
+                    round_started = True  
+                    world.game_speed = 2 # 2 or something other than 1 to quick fix the button overlap error 
+            else:    
+                if fast_forward_button.draw(screen):
+                    if world.game_speed == 1:
+                        world.game_speed = 4
+                    else:
+                        world.game_speed = 1
+
+                #Spawn enemy
+                spawn_enemy()
+                    
+            #mouse pos update
+            mouse_pos = pygame.mouse.get_pos()
+            mouse_tile_x = mouse_pos[0] // c.TILE_SIZE
+            mouse_tile_y = mouse_pos[1] // c.TILE_SIZE
+            mouse_tile_num = mouse_tile_y * c.COLS + mouse_tile_x
+            
+            #Hanlde can_place variable
+            if 0 < mouse_pos[0] < c.SCREEN_WIDTH and 0 < mouse_pos[1] < c.SCREEN_HEIGHT:
+                if(world.tile_map[mouse_tile_num] == 25):
+                    free_space = True
+                    for turret in turret_group:
+                        if (mouse_tile_x, mouse_tile_y) == (turret.tile_x, turret.tile_y):
+                            can_place = False
+                            free_space = False
+                            break
+                    if free_space: can_place = True
+                else: can_place = False 
+            else: can_place = False         
+
+            if placing_turrets == True:
+                #draw preview turret
+                draw_preview_turret()
+                if cancel_button.draw(screen) == True:
+                    placing_turrets = False
+                
+
+            if selected_turret:
+                #draw turret info panel
+                current_info_panel_rect = pygame.draw.rect(screen, (187, 147, 95), (c.SCREEN_WIDTH - 307, c.SCREEN_HEIGHT - 700, 300, 600), border_bottom_left_radius=15, border_top_left_radius=15)
+                pygame.draw.rect(screen, (139, 94, 55), (c.SCREEN_WIDTH - 307, c.SCREEN_HEIGHT - 700, 300, 600), 4, border_bottom_left_radius=15, border_top_left_radius=15)
+
+                draw_text_with_outline(TURRET_TYPE[selected_turret.id]['type'].upper() + ' ' + TURRET_TYPE[selected_turret.id]['name'].upper(), large_font, 'white', 'black', 2, c.SCREEN_WIDTH - 153, c.SCREEN_HEIGHT - 670, center=True)
+
+                screen.blit(preview_bg, (c.SCREEN_WIDTH - 280, c.SCREEN_HEIGHT - 650))
+                pygame.draw.rect(screen, (139, 94, 55), (c.SCREEN_WIDTH - 280, c.SCREEN_HEIGHT - 650, 250, 150), 4)
+                preview_img = pygame.transform.scale(selected_turret.preview_img, (192, 192))
+                preview_img_rect = preview_img.get_rect()
+                preview_img_rect.center = (c.SCREEN_WIDTH - 280 + 125, c.SCREEN_HEIGHT - 650 + 85)
+                screen.blit(preview_img, preview_img_rect)
+
+                #draw game state
+                screen.blit(damage_img, (c.SCREEN_WIDTH - 295, c.SCREEN_HEIGHT - 472))
+                screen.blit(range_img, (c.SCREEN_WIDTH - 295, c.SCREEN_HEIGHT - 472 + 40))
+                screen.blit(speed_img, (c.SCREEN_WIDTH - 300, c.SCREEN_HEIGHT - 472 + 77))
+
+                draw_text_with_outline(str(selected_turret.damage), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 255, c.SCREEN_HEIGHT - 470)
+                draw_text_with_outline(str(selected_turret.range), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 255, c.SCREEN_HEIGHT - 470 + 40)
+                draw_text_with_outline(str(5 - int(selected_turret.cooldown / 300) + 1), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 255, c.SCREEN_HEIGHT - 470 + 80)
+                draw_text_with_outline('LV.' + str(selected_turret.level) + (' (Max)' if selected_turret.level == 4 else ''), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 270, c.SCREEN_HEIGHT - 470 + 130)
+
+                cost_text_col = 'white'
+                if selected_turret.level < 4:
+                    screen.blit(arrow_right_img, (c.SCREEN_WIDTH - 190, c.SCREEN_HEIGHT - 420))
+
+                    draw_text_with_outline(str(selected_turret.data[selected_turret.level]['damage']), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 80, c.SCREEN_HEIGHT - 470)
+                    draw_text_with_outline(str(selected_turret.data[selected_turret.level]['range']), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 80, c.SCREEN_HEIGHT - 470 + 40)
+                    draw_text_with_outline(str(5 - int(selected_turret.data[selected_turret.level]['cooldown'] / 300) + 1), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 80, c.SCREEN_HEIGHT - 470 + 80)
+                    draw_text_with_outline('LV.' + str(selected_turret.level + 1), large_font, 'white', 'black', 1, c.SCREEN_WIDTH - 80, c.SCREEN_HEIGHT - 470 + 130)
+
+
+                    #handle upgrade button
+                    if upgrade_button.draw(screen):
+                        if(world.money >= upgrade_cost):
+                            selected_turret.upgrade()
+                            world.money -= upgrade_cost
+
+                    if world.money >= upgrade_cost:
+                        cost_text_col = 'white'
+                    else: cost_text_col  = 'red'
+
+                    draw_text('UPGRADE', medium_font, 'white', c.SCREEN_WIDTH - 208, c.SCREEN_HEIGHT - 275)
+                    draw_text_with_outline('$' + str(upgrade_cost), text_font, cost_text_col, 'black', 1,  c.SCREEN_WIDTH - 180, c.SCREEN_HEIGHT - 240)
+                    screen.blit(coin_image, (c.SCREEN_WIDTH - 120, c.SCREEN_HEIGHT - 243))
+                    
+                #Handle sell button
+                draw_text_with_outline('$' + str(sell_cost), text_font, 'white', 'black', 1,  c.SCREEN_WIDTH - 245, c.SCREEN_HEIGHT - 165)
+                screen.blit(coin_image, (c.SCREEN_WIDTH - 280, c.SCREEN_HEIGHT - 168))
+                if sell_button.draw(screen):
+                    selected_turret.kill()
+                    selected_turret = None
+                    world.money += sell_cost
+
+        else:
+            pygame.draw.rect(screen, (187, 147, 95), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400 / 2, 200, 400, 300), 0, 10)
+            pygame.draw.rect(screen, (139, 94, 55), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400 / 2, 200, 400, 300), 6, 10)
+
+            if game_result == -1:
+                draw_text_with_outline('GAME OVER!', huge_font, 'white', 'black', 2, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 250, center= True)
+                #restart level
+                if restart_button_2.draw(screen):
+                    game_state = 'playing'
+                    reset_level()
+                    game_music.stop()
+                    game_music.play(-1)
+                draw_text_with_outline('RESTART', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 325, center= True)
+                
+                
+            elif game_result == 1:
+                draw_text_with_outline('WON!', huge_font, 'white', 'black', 2, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 250, center= True)
+
+                if next_level_button.draw(screen):
+                    game_state = 'playing'
+                    current_map_number = min(c.TOTAL_LEVELS, current_map_number + 1)
+                    reset_level()
+                    game_music.stop()
+                    game_music.play(-1)
+                draw_text_with_outline('NEXT LEVEL', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 325, center= True)
+
+            if menu_button_2.draw(screen):
+                game_state = 'menu'
+                choosing_menu_index = 0
+                game_music.stop()
+                bg_music.play(-1)
+                reset_level()
+                pygame.time.delay(200) # quick fix overlap button
+            draw_text_with_outline('MENU', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 425, center= True)
+            
+    
+    elif game_state == 'setting':
+        pygame.draw.rect(screen, (187, 147, 95), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400 / 2, 100, 400, 500), 0, 10)
+        pygame.draw.rect(screen, (139, 94, 55), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400 / 2, 100, 400, 500), 6, 10)
+        draw_text_with_outline('SETTING', huge_font, 'white', 'black', 2, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 150, center= True)
+
+        if menu_button.draw(screen):
+            game_state = 'menu'
+            choosing_menu_index = 0
+            game_music.stop()
+            bg_music.play(-1)
+            reset_level()
+            pygame.time.delay(200) # quick fix overlap button
+
+        draw_text_with_outline('MENU', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 530, center= True)
+
+        if continue_button.draw(screen):
+            game_state = 'playing'
+
+        draw_text_with_outline('CONTINUE', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 245, center= True)
+
         if restart_button.draw(screen):
-            game_over = False
-            round_started = False
-            placing_turrets = False
-            selected_turret = None
-            last_enemy_spawn = pygame.time.get_ticks()
-            world = World(map_data, map_image)
-            world.process_data()
-            world.process_enemies()
-            #empty groups
-            enemy_group.empty()
-            turret_group.empty()
+            game_state = 'playing'
+            reset_level()
+            game_music.stop()
+            game_music.play(-1)
+
+        draw_text_with_outline('RESTART', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 425, center= True)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            print(mouse_pos)
+            print(pygame.mouse.get_pos())
             if 0 < mouse_pos[0] < c.SCREEN_WIDTH and 0 < mouse_pos[1] < c.SCREEN_HEIGHT:
                 turret = select_turret() # turret = None if can't select 
                 if selected_turret:
@@ -464,6 +626,8 @@ while run:
                 elif turret:
                     selected_turret = turret
                     selected_turret.selected = True
+
+    
 
     pygame.display.update()
 
