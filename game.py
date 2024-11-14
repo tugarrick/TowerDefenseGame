@@ -354,12 +354,14 @@ def reset_level():
 # 4 is Exit
 choosing_menu_index = 0
 
+
+
 clock = pygame.time.Clock()
 run = True
 #GAME LOOP
 while run:
     clock.tick(c.FPS)
-    
+
     if game_state == 'menu':
 
         screen.blit(menu_bg, (0,0))
@@ -428,7 +430,7 @@ while run:
                 game_result = 1 #win
 
             #Update
-            enemy_group.update()
+            enemy_group.update(clock)
             turret_group.update(enemy_group, world)
             
         enemy_group.draw(screen)
@@ -627,7 +629,7 @@ while run:
                     selected_turret = turret
                     selected_turret.selected = True
 
-    
+    draw_text_with_outline('FPS: ' + str(round(clock.get_fps(), 1)), large_font, 'white', 'black', 0, 30 , 725, center= False)
 
     pygame.display.update()
 

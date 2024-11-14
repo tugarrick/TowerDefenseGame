@@ -26,14 +26,14 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
 
-    def update(self):
+    def update(self, clock):
 
         if self.health <= ENEMY_DATA['map_' + str(self.world.map_number)][str(max(1, int(self.level) - 1))].get('health'):
             self.level = str(max(1, int(self.level) - 1))
             self.original_image = pygame.image.load(path + 'map_' + str(self.world.map_number) + '_level_' + self.level + '.png').convert_alpha()
 
         self.rotate()
-        self.move()
+        self.move(clock)
         self.check_alive()
 
     def rotate(self):
@@ -47,12 +47,12 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
 
-    def move(self):
+    def move(self, clock):
         
         self.movement = self.target - self.pos
         dist = self.movement.length()
-        if dist >= self.speed * self.world.game_speed:
-            self.pos += self.movement.normalize() / c.FPS * self.speed * self.world.game_speed * 60
+        if dist >= 1 / clock.get_fps() * (self.speed * 60) * self.world.game_speed:
+            self.pos += self.movement.normalize() / clock.get_fps() * (self.speed * 60) * self.world.game_speed
         elif dist > 0: 
             self.pos += self.movement.normalize() * dist
         else:
