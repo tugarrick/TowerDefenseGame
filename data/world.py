@@ -9,7 +9,7 @@ class World:
     def __init__(self, map_number):
         self.map_number = map_number
         self.map_data = json.load(open('data/levels/map_' + str(map_number) + '.tmj'))
-        self.image = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(map_number) +'.png'), (c.SCREEN_WIDTH, c.SCREEN_HEIGHT))
+        self.image = pygame.image.load('data/levels/map_' + str(map_number) +'.png').convert_alpha()
         
         self.waypoints = []
         self.tile_map = []
@@ -21,6 +21,7 @@ class World:
         self.round_nums = len(ENEMY_SPAWN_DATA["map_" + str(self.map_number)])
         self.health = 100
         self.money = 800
+        self.volume = 1
         self.process_data()
         self.process_enemies()
 

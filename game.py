@@ -67,7 +67,17 @@ selected_turret = None
 upgrade_cost = 100
 sell_cost = 100
 round_started = False
+sound_muted = False
+show_fps = True
 current_info_panel_rect = pygame.Rect(0,0,0,0)
+
+last_fps = 60
+max_fps = 60
+delay_update_fps_time = 250
+last_update_fps = pygame.time.get_ticks()
+auto_fast_speed = False
+music = True
+sfx = True
 
 slot_height = 120
 slot_width = 80
@@ -78,7 +88,7 @@ slot_rows = 4
 dark_overlay = pygame.Surface((slot_width, slot_height), pygame.SRCALPHA)
 dark_overlay.fill((0, 0, 0, 0))  # Đen với alpha 100
 
-menu_bg = pygame.transform.scale(pygame.image.load("data/assets/images/backgrounds/menu_bg.png"), (c.SCREEN_WIDTH + c.SIDE_PANEL, c.SCREEN_HEIGHT))
+menu_bg = pygame.transform.scale(pygame.image.load("data/assets/images/backgrounds/menu_bg.png").convert_alpha(), (c.SCREEN_WIDTH + c.SIDE_PANEL, c.SCREEN_HEIGHT))
 slot_bg = pygame.image.load('data/assets/images/backgrounds/SlotImage.png')
 preview_bg = pygame.image.load('data/assets/images/backgrounds/preview_turret.png')
 arrow_right_img = pygame.image.load('data/assets/images/gui/arrow_right.png').convert_alpha()
@@ -90,7 +100,6 @@ for y in range(15, (10 + slot_space + slot_height)*(slot_rows - 1) + 1, slot_hei
     slot_buttons.append(Button(c.SCREEN_WIDTH + slot_width + slot_space + 5, y, dark_overlay, True))
     if y == 15: break
 
-      
 #button
 new_game_image = pygame.image.load('data/assets/images/buttons/new_game.png').convert_alpha()
 choose_level_image = pygame.image.load('data/assets/images/buttons/choose_level.png').convert_alpha()
@@ -98,20 +107,17 @@ options_image = pygame.image.load('data/assets/images/buttons/options.png').conv
 exit_game_image = pygame.image.load('data/assets/images/buttons/exit.png').convert_alpha()
 arrow_navigation_right_img = pygame.image.load('data/assets/images/buttons/arrow_right.png').convert_alpha()
 arrow_navigation_left_img = pygame.image.load('data/assets/images/buttons/arrow_left.png').convert_alpha()
-arrow_navigation_right_img = pygame.transform.scale(arrow_navigation_right_img, (100,76))
-arrow_navigation_left_img = pygame.transform.scale(arrow_navigation_left_img, (100,76))
 buy_turret_image = pygame.image.load('data/assets/images/buttons/buy_turret.png').convert_alpha()
-cancel_image = pygame.image.load('data/assets/images/buttons/cancel.png').convert_alpha()
-upgrade_image = pygame.image.load('data/assets/images/buttons/upgrade_turret.png').convert_alpha()
-begin_image = pygame.image.load('data/assets/images/buttons/begin.png').convert_alpha()
-restart_image = pygame.image.load('data/assets/images/buttons/restart.png').convert_alpha()
-fast_forward_image = pygame.image.load('data/assets/images/buttons/fast_forward.png').convert_alpha()
 sell_image = pygame.image.load('data/assets/images/buttons/sell.png').convert_alpha()
 green_button_img = pygame.transform.scale(pygame.image.load('data/assets/images/buttons/green_button.png').convert_alpha(), (200, 90))
 sample_button_img = pygame.image.load('data/assets/images/buttons/sample.png').convert_alpha()
-map_img = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(current_map_number) + '.png'),(550,300))
+preview_map_img = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(current_map_number) + '.png').convert_alpha(),(550,300))
 exit_icon_img = pygame.image.load('data/assets/images/buttons/exit_icon.png').convert_alpha()
 setting_icon_img = pygame.transform.scale(pygame.image.load('data/assets/images/buttons/setting.png').convert_alpha(), (85, 80))
+mute_icon_img = pygame.transform.scale(pygame.image.load('data/assets/images/buttons/mute_icon.png').convert_alpha(), (65, 65))
+unmute_icon_img = pygame.transform.scale(pygame.image.load('data/assets/images/buttons/unmute_icon.png').convert_alpha(), (65, 65))
+
+
 
 #GUI
 heart_image = pygame.image.load("data/assets/images/gui/heart.png").convert_alpha()
@@ -125,23 +131,35 @@ new_game_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - new_game_image.ge
 choose_level_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - choose_level_image.get_width() / 2, 430, choose_level_image, True)
 options_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - options_image.get_width() / 2, 530, options_image, True)
 exit_game_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - exit_game_image.get_width() / 2, 630, exit_game_image, True)
-arrow_navigation_left_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400, 300, arrow_navigation_left_img, True)
-arrow_navigation_right_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2  + 300 , 300, arrow_navigation_right_img, True)
+arrow_navigation_left_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400, 300, pygame.transform.scale(arrow_navigation_left_img, (100,76)), True)
+arrow_navigation_right_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2  + 300, 300, pygame.transform.scale(arrow_navigation_right_img, (100,76)), True)
+increase_fps_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2  + 140, 230, pygame.transform.scale(arrow_navigation_right_img, (80,40)), True)
+decrease_fps_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2  - 230, 230, pygame.transform.scale(arrow_navigation_left_img, (80,40)), True)
+
 buy_turret_button = Button(c.SCREEN_WIDTH + 30, 120, buy_turret_image, True)
-cancel_button = Button(c.SCREEN_WIDTH + 40, c.SCREEN_HEIGHT - 120, cancel_image, True)
-upgrade_button = Button(c.SCREEN_WIDTH - 250, c.SCREEN_HEIGHT - 290, green_button_img, True)
-begin_button = Button(c.SCREEN_WIDTH + 12, c.SCREEN_HEIGHT - 60, begin_image, True)
-fast_forward_button = Button(c.SCREEN_WIDTH + 5, c.SCREEN_HEIGHT - 60, fast_forward_image, True)
-sell_button = Button(c.SCREEN_WIDTH - 190, c.SCREEN_HEIGHT - 190, sell_image, True)
+cancel_button = Button(c.SCREEN_WIDTH + 12, c.SCREEN_HEIGHT - 140, pygame.transform.scale(sample_button_img, (180, 74)), True)
+upgrade_button = Button(c.SCREEN_WIDTH - 190, c.SCREEN_HEIGHT - 280, pygame.transform.scale(sample_button_img, (180, 74)), True)
+sell_button = Button(c.SCREEN_WIDTH - 190, c.SCREEN_HEIGHT - 200, pygame.transform.scale(sample_button_img, (180, 74)), True)
+begin_button = Button(c.SCREEN_WIDTH + 12, c.SCREEN_HEIGHT - 80, pygame.transform.scale(sample_button_img, (180, 74)), True)
+fast_speed_button = Button(c.SCREEN_WIDTH + 12, c.SCREEN_HEIGHT - 80, pygame.transform.scale(sample_button_img, (180, 74)), True)
+low_speed_button = Button(c.SCREEN_WIDTH + 12, c.SCREEN_HEIGHT - 80, pygame.transform.scale(sample_button_img, (180, 74)), True)
+# sell_button = Button(c.SCREEN_WIDTH - 190, c.SCREEN_HEIGHT - 190, sell_image, True)
 play_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 510, sample_button_img, True)
 exit_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 + 365, 105, exit_icon_img, True)
 setting_button = Button(1065, 0, setting_icon_img, True)
-menu_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 485, sample_button_img, True)
+mute_button = Button(1073, 80, mute_icon_img, True)
+unmute_button = Button(1073, 80, unmute_icon_img, True)
+menu_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 470, sample_button_img, True)
 menu_button_2 = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 380, sample_button_img, True)
 continue_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 200, sample_button_img, True)
 restart_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 380, sample_button_img, True)
 restart_button_2 = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 280, sample_button_img, True)
 next_level_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 280, sample_button_img, True)
+show_fps_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 290, sample_button_img, True)
+hide_fps_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - sample_button_img.get_width() / 2, 290, sample_button_img, True)
+auto_fast_speed_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 70, 290, pygame.transform.scale(sample_button_img, (140, 74)), True)
+music_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 70, 370, pygame.transform.scale(sample_button_img, (140, 74)), True)
+sfx_button = Button((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 70, 450, pygame.transform.scale(sample_button_img, (140, 74)), True)
 
 #text
 text_font = pygame.font.Font("data/fonts/SparkyStonesRegular-BW6ld.ttf", 24)
@@ -162,8 +180,6 @@ game_music.set_volume(0.2)
 
 sfx_shot = pygame.mixer.Sound('data/assets/audio/shot.wav')
 sfx_shot.set_volume(0.5)
-
-
 
 # Method
 def draw_text(text, font, text_col, x, y):
@@ -347,6 +363,18 @@ def reset_level():
     enemy_group.empty()
     turret_group.empty()
 
+def set_music_volume(volume):
+    global game_music
+    global bg_music
+
+    game_music.set_volume(volume * 0.2)
+    bg_music.set_volume(volume * 0.3)
+
+def set_sfx_volume(volume):
+    global sfx_shot
+
+    sfx_shot.set_volume(volume * 0.5)
+
 # 0 means no menu has been selected
 # 1 is New Game
 # 2 is Choose level
@@ -354,19 +382,17 @@ def reset_level():
 # 4 is Exit
 choosing_menu_index = 0
 
-
-
 clock = pygame.time.Clock()
 run = True
 #GAME LOOP
 while run:
-    clock.tick(c.FPS)
+    clock.tick(max_fps)
 
     if game_state == 'menu':
 
         screen.blit(menu_bg, (0,0))
 
-        if (new_game_button.draw(screen) and choosing_menu_index == 0):
+        if (choosing_menu_index == 0 and new_game_button.draw(screen)):
             # choosing_menu_index = 1  
             current_map_number = 1
             world = World(current_map_number)
@@ -375,25 +401,27 @@ while run:
             bg_music.stop()
             game_music.play(-1)
             game_state = 'playing'
-            pygame.time.delay(200) # quick fix overlap button
+            # pygame.time.delay(200) # quick fix overlap button
             
 
-        elif (choose_level_button.draw(screen) and choosing_menu_index == 0) or choosing_menu_index == 2:
+        elif choosing_menu_index == 2 or (choosing_menu_index == 0 and choose_level_button.draw(screen)):
+            if choosing_menu_index == 0:
+                preview_map_img = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(current_map_number) + '.png'),(550,300))
             choosing_menu_index = 2
 
             pygame.draw.rect(screen, (187, 147, 95), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 900 / 2, 100, 900, 500), 0, 10)
             pygame.draw.rect(screen, (139, 94, 55), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 900 / 2, 100, 900, 500), 6, 10)
             
-            screen.blit(map_img, ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - map_img.get_width() / 2, 170))
-            pygame.draw.rect(screen, (139, 94, 55), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - map_img.get_width() / 2 - 4, 170 - 4, 550 + 8, 300 + 8), 4, 6)
+            screen.blit(preview_map_img, ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - preview_map_img.get_width() / 2, 170))
+            pygame.draw.rect(screen, (139, 94, 55), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - preview_map_img.get_width() / 2 - 4, 170 - 4, 550 + 8, 300 + 8), 4, 6)
             draw_text_with_outline('MAP ' + str(current_map_number), large_font, 'white', 'black', 2, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 500, center= True)
 
             if current_map_number > 1 and arrow_navigation_left_button.draw(screen):
                 current_map_number -= 1
-                map_img = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(current_map_number) + '.png'),(550,300))
+                preview_map_img = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(current_map_number) + '.png'),(550,300))
             if current_map_number < c.TOTAL_LEVELS and arrow_navigation_right_button.draw(screen):        
                 current_map_number += 1
-                map_img = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(current_map_number) + '.png'),(550,300))
+                preview_map_img = pygame.transform.scale(pygame.image.load('data/levels/map_' + str(current_map_number) + '.png'),(550,300))
             
             if play_button.draw(screen):
                 world = World(current_map_number)
@@ -401,7 +429,7 @@ while run:
                 bg_music.stop()
                 game_music.play(-1)
                 game_state = 'playing'
-                pygame.time.delay(200) # quick fix overlap button
+                # pygame.time.delay(200) # quick fix overlap button
                 
 
             draw_text_with_outline('PLAY', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 555, center= True)
@@ -409,9 +437,62 @@ while run:
             if exit_button.draw(screen):
                 choosing_menu_index = 0
                 current_map_number = 1
-        elif (options_button.draw(screen) and choosing_menu_index == 0) or choosing_menu_index == 3:
-            pass
-        elif exit_game_button.draw(screen):
+        elif choosing_menu_index == 3 or (choosing_menu_index == 0 and options_button.draw(screen)):
+            choosing_menu_index = 3
+
+            pygame.draw.rect(screen, (187, 147, 95), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 900 / 2, 100, 900, 500), 0, 10)
+            pygame.draw.rect(screen, (139, 94, 55), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 900 / 2, 100, 900, 500), 6, 10)
+            draw_text_with_outline('OPTIONS', huge_font, 'white', 'black', 2, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 150, center= True)
+            draw_text_with_outline('MAX FPS:', large_font, 'white', 'black', 1, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 420 , 230, center= False)
+            draw_text_with_outline('AUTO FAST SPEED:', large_font, 'white', 'black', 1, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 420 , 310, center= False)
+            draw_text_with_outline('MUSIC:', large_font, 'white', 'black', 1, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 420 , 390, center= False)
+            draw_text_with_outline('SFX:', large_font, 'white', 'black', 1, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 420 , 470, center= False)
+            
+
+            if max_fps <= 120 and increase_fps_button.draw(screen):
+                if max_fps == 120:
+                    max_fps = 1000
+                else: 
+                    max_fps += 30
+            if max_fps > 30 and decrease_fps_button.draw(screen):
+                max_fps = min(120, max_fps - 30)
+
+            if auto_fast_speed_button.draw(screen):
+                auto_fast_speed = not auto_fast_speed          
+            if music_button.draw(screen):
+                music = not music
+                set_music_volume(1 if music else 0)
+                         
+            if sfx_button.draw(screen):
+                sfx = not sfx
+                set_sfx_volume(1 if sfx else 0)
+                
+            
+            if max_fps <= 120:
+                draw_text_with_outline(str(max_fps), large_font, 'white', 'black', 1, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2, 250, center= True)
+            else:
+                draw_text_with_outline('UNLIMITED', large_font, 'white', 'black', 1, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2, 250, center= True)
+
+            if auto_fast_speed:
+                draw_text_with_outline('ON', medium_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2, 327, center= True)
+            else:
+                draw_text_with_outline('OFF', medium_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2, 327, center= True)
+
+            if music:
+                draw_text_with_outline('ON', medium_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2, 407, center= True)
+            else:
+                draw_text_with_outline('OFF', medium_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2, 407, center= True)
+   
+            if sfx:
+                draw_text_with_outline('ON', medium_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2, 487, center= True)
+            else:
+                draw_text_with_outline('OFF', medium_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2, 487, center= True)
+
+            if exit_button.draw(screen):
+                choosing_menu_index = 0
+                current_map_number = 1
+
+        elif choosing_menu_index == 0 and exit_game_button.draw(screen):
             run = False
 
     elif game_state == 'playing':
@@ -447,16 +528,31 @@ while run:
             if setting_button.draw(screen):
                 game_state = 'setting'
 
+            if music == True:
+                if mute_button.draw(screen):
+                    music = False
+                    set_music_volume(0)
+                    
+            else:
+                if unmute_button.draw(screen):
+                    music = True
+                    set_music_volume(1)
+                    
             if round_started == False:
                 if begin_button.draw(screen):
                     round_started = True  
-                    world.game_speed = 2 # 2 or something other than 1 to quick fix the button overlap error 
-            else:    
-                if fast_forward_button.draw(screen):
-                    if world.game_speed == 1:
-                        world.game_speed = 4
-                    else:
+                    world.game_speed = 4 if auto_fast_speed else 1
+                draw_text_with_outline('BEGIN ROUND', text_font, (157,57,25), 'black', 0, c.SCREEN_WIDTH + 100, c.SCREEN_HEIGHT - 40, center= True)
+            else:
+                if world.game_speed == 1:    
+                    if fast_speed_button.draw(screen):
+                        world.game_speed = 4  
+                    draw_text_with_outline('FAST SPEED', text_font, (157,57,25), 'black', 0, c.SCREEN_WIDTH + 100, c.SCREEN_HEIGHT - 40, center= True)
+                else:
+                    if low_speed_button.draw(screen):
                         world.game_speed = 1
+
+                    draw_text_with_outline('SLOW SPEED', text_font, (157,57,25), 'black', 0, c.SCREEN_WIDTH + 100, c.SCREEN_HEIGHT - 40, center= True)
 
                 #Spawn enemy
                 spawn_enemy()
@@ -485,6 +581,7 @@ while run:
                 draw_preview_turret()
                 if cancel_button.draw(screen) == True:
                     placing_turrets = False
+                draw_text_with_outline('CANCEL', text_font, (157,57,25), 'black', 0, c.SCREEN_WIDTH + 100, c.SCREEN_HEIGHT - 100, center= True)
                 
 
             if selected_turret:
@@ -526,23 +623,24 @@ while run:
                         if(world.money >= upgrade_cost):
                             selected_turret.upgrade()
                             world.money -= upgrade_cost
-
+                    draw_text_with_outline('UPGRADE', medium_font, (157,57,25), 'black', 0, c.SCREEN_WIDTH - 100, c.SCREEN_HEIGHT - 240, center= True)
+                    
                     if world.money >= upgrade_cost:
                         cost_text_col = 'white'
                     else: cost_text_col  = 'red'
 
-                    draw_text('UPGRADE', medium_font, 'white', c.SCREEN_WIDTH - 208, c.SCREEN_HEIGHT - 275)
-                    draw_text_with_outline('$' + str(upgrade_cost), text_font, cost_text_col, 'black', 1,  c.SCREEN_WIDTH - 180, c.SCREEN_HEIGHT - 240)
-                    screen.blit(coin_image, (c.SCREEN_WIDTH - 120, c.SCREEN_HEIGHT - 243))
+                    draw_text_with_outline('$' + str(upgrade_cost), text_font, cost_text_col, 'black', 1,  c.SCREEN_WIDTH - 245, c.SCREEN_HEIGHT - 255)
+                    screen.blit(coin_image, (c.SCREEN_WIDTH - 280, c.SCREEN_HEIGHT - 258))
                     
                 #Handle sell button
-                draw_text_with_outline('$' + str(sell_cost), text_font, 'white', 'black', 1,  c.SCREEN_WIDTH - 245, c.SCREEN_HEIGHT - 165)
-                screen.blit(coin_image, (c.SCREEN_WIDTH - 280, c.SCREEN_HEIGHT - 168))
+                draw_text_with_outline('$' + str(sell_cost), text_font, 'white', 'black', 1,  c.SCREEN_WIDTH - 245, c.SCREEN_HEIGHT - 175)
+                screen.blit(coin_image, (c.SCREEN_WIDTH - 280, c.SCREEN_HEIGHT - 178))
                 if sell_button.draw(screen):
                     selected_turret.kill()
                     selected_turret = None
                     world.money += sell_cost
-
+                draw_text_with_outline('SELL', medium_font, (157,57,25), 'black', 0, c.SCREEN_WIDTH - 100, c.SCREEN_HEIGHT - 160, center= True)
+                
         else:
             pygame.draw.rect(screen, (187, 147, 95), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400 / 2, 200, 400, 300), 0, 10)
             pygame.draw.rect(screen, (139, 94, 55), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400 / 2, 200, 400, 300), 6, 10)
@@ -571,33 +669,54 @@ while run:
 
             if menu_button_2.draw(screen):
                 game_state = 'menu'
+                current_map_number = 1
                 choosing_menu_index = 0
                 game_music.stop()
                 bg_music.play(-1)
                 reset_level()
-                pygame.time.delay(200) # quick fix overlap button
+                # pygame.time.delay(200) # quick fix overlap button
             draw_text_with_outline('MENU', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 425, center= True)
             
     
     elif game_state == 'setting':
+        world.draw(screen)
+        enemy_group.draw(screen)
+
+        for turret in turret_group:
+            turret.draw(screen)
+
+        display_data()
+
         pygame.draw.rect(screen, (187, 147, 95), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400 / 2, 100, 400, 500), 0, 10)
         pygame.draw.rect(screen, (139, 94, 55), ((c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 - 400 / 2, 100, 400, 500), 6, 10)
         draw_text_with_outline('SETTING', huge_font, 'white', 'black', 2, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 150, center= True)
 
         if menu_button.draw(screen):
             game_state = 'menu'
+            current_map_number = 1
             choosing_menu_index = 0
             game_music.stop()
             bg_music.play(-1)
             reset_level()
-            pygame.time.delay(200) # quick fix overlap button
+            # pygame.time.delay(200) # quick fix overlap button
 
-        draw_text_with_outline('MENU', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 530, center= True)
+        draw_text_with_outline('MENU', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 515, center= True)
 
         if continue_button.draw(screen):
             game_state = 'playing'
-
         draw_text_with_outline('CONTINUE', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 245, center= True)
+
+        if show_fps == False:
+            if show_fps_button.draw(screen):
+                show_fps = True        
+            draw_text_with_outline('SHOW FPS', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 335, center= True)     
+        else:
+            if hide_fps_button.draw(screen):
+                show_fps = False
+            draw_text_with_outline('HIDE FPS', large_font, (157,57,25), 'black', 0, (c.SCREEN_WIDTH + c.SIDE_PANEL) / 2 , 335, center= True)     
+        
+
+
 
         if restart_button.draw(screen):
             game_state = 'playing'
@@ -611,7 +730,7 @@ while run:
         if event.type == pygame.QUIT:
             run = False
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            print(pygame.mouse.get_pos())
+            #print(pygame.mouse.get_pos())
             if 0 < mouse_pos[0] < c.SCREEN_WIDTH and 0 < mouse_pos[1] < c.SCREEN_HEIGHT:
                 turret = select_turret() # turret = None if can't select 
                 if selected_turret:
@@ -628,8 +747,25 @@ while run:
                 elif turret:
                     selected_turret = turret
                     selected_turret.selected = True
+        if game_state == 'playing' or game_state == 'setting':
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if game_state == 'setting':
+                    game_state = 'playing'
+                else:
+                    game_state = 'setting'
+            
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
+                music = not music
+                set_music_volume(1 if music else 0)
 
-    draw_text_with_outline('FPS: ' + str(round(clock.get_fps(), 1)), large_font, 'white', 'black', 0, 30 , 725, center= False)
+    if show_fps:
+        if pygame.time.get_ticks() - last_update_fps > delay_update_fps_time:
+            current_fps = min(max_fps, round(clock.get_fps()))
+            draw_text_with_outline('FPS: ' + str(current_fps), large_font, 'white', 'black', 0, 30 , 725, center= False)
+            last_update_fps = pygame.time.get_ticks()
+            last_fps = current_fps
+        else:
+            draw_text_with_outline('FPS: ' + str(last_fps), large_font, 'white', 'black', 0, 30 , 725, center= False)
 
     pygame.display.update()
 

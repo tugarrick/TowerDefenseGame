@@ -98,7 +98,6 @@ class Turret(pygame.sprite.Sprite):
             self.ori_image = self.anim_list[self.frame]
             self.target = None       
 
-    
     def draw(self, suf):
         if self.target:
             x_dist = self.target.pos[0] - self.x
